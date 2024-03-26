@@ -1,14 +1,14 @@
 # LLVM-pass
 ## Overview
-This project is an educational project about LLVM Pass. Developed pass dumps static and dynamic info. 
+This project is an educational project about LLVM Pass. Developed pass dumps static and dynamic info.
 
-In static it collects: 
+In static it collects:
   - Basic Block ID
   - Function, that BB belongs to
   - Basic Block's successors
   - Instructions inside Basic Block and their IDs
 
-Result will be `<filename>.pcno` in following format: 
+Result will be `<filename>.pcno` in following format:
 ```
 BBId
 Number of Instructions
@@ -39,7 +39,7 @@ binop BBId InstrId Result
 ...
 ```
 
-Then, you can collect and visualise info, using visualiser. Visualiser will paint hot basic blocks in orange colors and cold basic blocks in blue colors. (Basic Block is treated as hot if it was executed more than average number of times). Visualiser will also print result of binary operation after them with `=` (for recursion it will print the last result).
+Then, you can collect and visualize info, using visualizer. Visualizer will paint hot basic blocks in orange colors and cold basic blocks in blue colors. (Basic Block is treated as hot if it was executed more than average number of times). Visualizer will also print result of binary operation after them with `=` (for recursion it will print the last result).
 
 ## Build
 
@@ -55,7 +55,7 @@ cmake ..
 make
 ```
 
-It will generate `libPass.so` - plugin for clang with our Pass. It will also generate `./visualisator` for example usage.
+It will generate `libPass.so` - plugin for clang with our Pass. It will also generate `./visualizer` for example usage.
 
 ### Usage
 
@@ -64,7 +64,7 @@ It will generate `libPass.so` - plugin for clang with our Pass. It will also gen
 2. Generate executable
   `clang -Xclang -load -Xclang ./libPass.so <src_file> ../pass/log.c -flegacy-pass-manager`
 3. Generate DOT file
-   `./visualiser <src_file>.pcno <src_file>.pcda` (this will create `cfg.dot`, if you want to specify output file, run `./visualisator <src_file>.pcno <src_file>.pcda <out_file>`)
+   `./visualizer <src_file>.pcno <src_file>.pcda` (this will create `cfg.dot`, if you want to specify output file, run `./visualizer <src_file>.pcno <src_file>.pcda <out_file>`)
 4. Generate PNG of CFG
    `dot -Tpng <out_file>.dot -o <out>.png`
 
