@@ -17,11 +17,12 @@ using namespace llvm;
 using sys::fs::OpenFlags;
 
 namespace {
-struct CoveragePass : public FunctionPass {
+
+struct CFGPass : public FunctionPass {
   static char ID;
   std::error_code Er;
   std::unordered_set<std::string> Files;
-  CoveragePass() : FunctionPass(ID) {}
+  CFGPass() : FunctionPass(ID) {}
 
   virtual bool runOnFunction(Function &F) {
     if (isLogger(F.getName())) {
@@ -81,7 +82,7 @@ struct CoveragePass : public FunctionPass {
     FunctionCallee binOpLogFunc =
         F.getParent()->getOrInsertFunction("binOpLogger", binOpLogFuncType);
 
-    // Insert loggers for call, binOpt and ret instructions
+    // Insert loggers for bbStart and binOpt instructions
     for (auto &Bb : F) {
       Builder.SetInsertPoint(&Bb.front());
       Value *FileName = Builder.CreateGlobalStringPtr(DynamicFile);
@@ -127,16 +128,18 @@ struct CoveragePass : public FunctionPass {
   bool isLogger(StringRef FuncName) {
     return FuncName == "bbStartLogger" || FuncName == "binOpLogger";
   }
-};
+
+}; // struct CFGPass
+
 } // namespace
 
-char CoveragePass::ID = 0;
+char CFGPass::ID = 0;
 
 // Automatically enable the pass.
 // http://adriansampson.net/blog/clangpass.html
 static void registerMyPass(const PassManagerBuilder &,
                            legacy::PassManagerBase &PM) {
-  PM.add(new CoveragePass());
+  PM.add(new CFGPass());
 }
 static RegisterStandardPasses
     RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible, registerMyPass);

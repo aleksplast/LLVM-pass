@@ -69,7 +69,7 @@ public:
     }
 
     DotFile << "\", label = \"";
-    DotFile << "{BasicBlock\\n" << BBId << "\\nExec num: " << ExecNum << "\\n";
+    DotFile << "{BasicBlock\\n" << BBId << " in " << FuncName << "\\nExec num: " << ExecNum << "\\n";
     for (auto &Id: InstructionsOrder) {
         InstrInfo.at(Id).dumpDot(DotFile);
         DotFile << "\\n";
@@ -103,13 +103,9 @@ public:
       size_t NumSucc;
 
       In >> std::hex >> BbId;
-      std::cout << "BbId:" << std::hex << BbId << "\n";
       In >> NumInstr;
-      std::cout << "NumInstr: " << NumInstr << "\n";
       In >> FuncName;
-      std::cout << "FuncName: " << FuncName << "\n";
       In >> NumSucc;
-      std::cout << "NumSucc: " << NumSucc << "\n";
 
       BasicBlocks.insert({BbId, BBInfo(FuncName, BbId)});
 
@@ -117,7 +113,6 @@ public:
         size_t Successor;
 
         In >> std::hex >> Successor;
-        std::cout << "Successor: " << Successor << "\n";
         BasicBlocks.at(BbId).addSuccessor(Successor);
       }
 
@@ -134,9 +129,7 @@ public:
 
         In >> std::hex >> InstrId;
         In.get();
-        std::cout << "InstrId: " << InstrId << "\n";
         std::getline(In, InstrStr);
-        std::cout << InstrStr << "\n";
         BasicBlocks.at(BbId).addInstruction(InstrId, InstrStr);
       }
 
@@ -154,29 +147,21 @@ public:
     std::ifstream In(DynamicFileName);
     size_t TotalExecs;
 
-    std::cout << "\n\nHandling Dynamic Info\n";
     while (In.peek() != EOF) {
       std::string Type;
       size_t BbId;
 
       In >> Type;
-      std::cout << "Type: " << Type << "\n";
       if (Type == "binop") {
         size_t InstrId;
         int Result;
-        std::cout << "binop ";
         In >> std::hex >> BbId;
-        std::cout << "BbId: " << BbId;
         In >> std::hex >> InstrId;
-        std::cout << " InstrId: " << InstrId;
         In >> Result;
-        std::cout << " Result: " << Result << "\n";
 
         BasicBlocks.at(BbId).addBinOpResult(InstrId, Result);
       } else if (Type == "exec") {
-        std::cout << "exec ";
         In >> std::hex >> BbId;
-        std::cout << "Id: " << BbId << "\n";
         TotalExecs += 1;
 
         BasicBlocks.at(BbId).addExec();

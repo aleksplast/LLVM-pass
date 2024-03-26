@@ -8,5 +8,5 @@ set(PASS_SRC ${PASS_DIR}/pass.cpp)
 add_library(Pass SHARED ${PASS_SRC})
 
 set(EXAMPLE_SRC ${EXAMPLE_DIR}/visualise_example.cpp)
-add_executable(Visualisator)
-target_sources(Visualisator PRIVATE ${EXAMPLE_SRC})
+add_executable(visualisator)
+target_sources(visualisator PRIVATE ${EXAMPLE_SRC})
