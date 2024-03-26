@@ -39,6 +39,7 @@ struct CFGPass : public FunctionPass {
     if (Files.find(Filename) == Files.end()) {
       raw_fd_ostream StatOs(StaticFile, Er);
       raw_fd_ostream DynOs(DynamicFile, Er);
+      Files.insert(Filename);
     }
 
     raw_fd_ostream Os(StaticFile, Er, OpenFlags::OF_Append);
