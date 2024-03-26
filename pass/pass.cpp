@@ -5,6 +5,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <fstream>
+#include <llvm-14/llvm/IR/CFG.h>
 #include <llvm-14/llvm/IR/Function.h>
 #include <llvm-14/llvm/IR/LLVMContext.h>
 #include <llvm-14/llvm/Support/FileSystem.h>
@@ -41,12 +42,19 @@ struct CoveragePass : public FunctionPass {
 
     raw_fd_ostream Os(StaticFile, Er, OpenFlags::OF_Append);
 
+    // Dumping static info
     for (auto &Bb : F) {
-      Os << &Bb << " : " << Bb.getInstList().size() << " : " << F.getName() << "\n";
+      Os << &Bb << "\n" << Bb.getInstList().size() << "\n" << F.getName();
+      Os << "\n" << Bb.getTerminator()->getNumSuccessors() << "\n";
+      for (auto *Succ : successors(&Bb)) {
+        Os << Succ << "\n";
+      }
+      Os << "{\n";
       for (auto &I : Bb) {
         Os << &I << "\n";
+        Os << I << "\n";
       }
-      Os << Bb;
+      Os << "}\n\n";
     }
 
     // Prepare builder for IR modification
@@ -65,8 +73,9 @@ struct CoveragePass : public FunctionPass {
 
     // Prepare binOpLogger function
     ArrayRef<Type *> binOpParamTypes = {Builder.getInt8Ty()->getPointerTo(),
-                                         Builder.getInt64Ty()->getPointerTo(),
-                                         Type::getInt32Ty(Ctx)};
+                                        Builder.getInt64Ty()->getPointerTo(),
+                                        Builder.getInt64Ty()->getPointerTo(),
+                                        Type::getInt32Ty(Ctx)};
     FunctionType *binOpLogFuncType =
         FunctionType::get(RetType, binOpParamTypes, false);
     FunctionCallee binOpLogFunc =
@@ -87,8 +96,9 @@ struct CoveragePass : public FunctionPass {
           Builder.SetInsertPoint(&Bb, ++Builder.GetInsertPoint());
 
           // Insert a call to binOptLogFunc function
-          Value *InstrAddr = ConstantInt::get(Builder.getInt64Ty(), (int64_t)(&I));
-          Value *args[] = {FileName, InstrAddr, op};
+          Value *InstrAddr =
+              ConstantInt::get(Builder.getInt64Ty(), (int64_t)(&I));
+          Value *args[] = {FileName, BbAddr, InstrAddr, op};
           Builder.CreateCall(binOpLogFunc, args);
         }
       }
@@ -102,17 +112,21 @@ struct CoveragePass : public FunctionPass {
   std::string handleSourceName(const std::string &SourceFile) {
     size_t SlashPos = SourceFile.find_last_of('/');
     size_t DotPos = SourceFile.find_last_of('.');
+    std::string CovFileName;
 
     if (SlashPos == SourceFile.npos) {
       SlashPos = 0;
+      CovFileName = SourceFile.substr(SlashPos, DotPos + 1 - SlashPos);
+    } else {
+      CovFileName = SourceFile.substr(SlashPos + 1, DotPos - SlashPos);
     }
 
-    std::string CovFilename =
-        SourceFile.substr(SlashPos + 1, DotPos - SlashPos);
-    return CovFilename;
+    return CovFileName;
   }
 
-  bool isLogger(StringRef FuncName) { return FuncName == "bbStartLogger" || FuncName == "binOpLogger"; }
+  bool isLogger(StringRef FuncName) {
+    return FuncName == "bbStartLogger" || FuncName == "binOpLogger";
+  }
 };
 } // namespace
 
