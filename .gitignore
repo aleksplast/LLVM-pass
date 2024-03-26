@@ -3,3 +3,6 @@
 *.pcno
 *.ll
 *.so
+*.dot
+*.png
+build
