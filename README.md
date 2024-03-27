@@ -60,12 +60,21 @@ It will generate `libPass.so` - plugin for clang with our Pass. It will also gen
 ### Usage
 
 1. Generate LLVM IR file
+   
 `clang -Xclang -load -Xclang ./libPass.so <src_file> -emit-llvm -S -o <out_name>.ll -flegacy-pass-manager`
-2. Generate executable
+
+3. Generate executable
+
   `clang -Xclang -load -Xclang ./libPass.so <src_file> ../pass/log.c -flegacy-pass-manager`
-3. Generate DOT file
-   `./visualizer <src_file>.pcno <src_file>.pcda` (this will create `cfg.dot`, if you want to specify output file, run `./visualizer <src_file>.pcno <src_file>.pcda <out_file>`)
-4. Generate PNG of CFG
+  
+4. Generate DOT file
+
+   `./visualizer <src_file>.pcno <src_file>.pcda` 
+   
+   (this will create `cfg.dot`, if you want to specify output file, run `./visualizer <src_file>.pcno <src_file>.pcda <out_file>`)
+   
+6. Generate PNG of CFG
+
    `dot -Tpng <out_file>.dot -o <out>.png`
 
 ## Examples
