@@ -9,25 +9,40 @@
 
 namespace Pass {
 
+class BinOpInfo {
+  int ResultSum;
+  size_t OpNum;
+
+public:
+  void addResult(int InResult) {
+    ResultSum += InResult;
+    OpNum += 1;
+  }
+
+  double getAverage() {
+    return static_cast<double>(ResultSum) / static_cast<double>(OpNum);
+  }
+};
+
 class InstructionInfo {
 private:
   std::string InstrStr;
   size_t InstrId;
   bool IsBinary = false;
-  size_t Result = 0;
+  BinOpInfo Info;
 
 public:
   InstructionInfo(std::string Str, size_t Id) : InstrStr(Str), InstrId(Id){};
 
-  void setResult(int InResult) {
+  void addResult(int InResult) {
     IsBinary = true;
-    Result = InResult;
+    Info.addResult(InResult);
   }
 
   void dumpDot(std::ofstream &DotFile) {
     DotFile << InstrStr;
     if (IsBinary) {
-        DotFile << " = " << Result;
+        DotFile << " = " << Info.getAverage();
     }
   }
 };
@@ -51,7 +66,7 @@ public:
   }
 
   void addBinOpResult(size_t &InstrAddr, int &Result) {
-    InstrInfo.at(InstrAddr).setResult(Result);
+    InstrInfo.at(InstrAddr).addResult(Result);
   }
 
   void addExec() {
