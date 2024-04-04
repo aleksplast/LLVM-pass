@@ -43,8 +43,8 @@ public:
 };
 
 class BinOpInfo {
-  int ResultSum;
-  size_t OpNum;
+  int ResultSum = 0;
+  size_t OpNum = 0;
 
 public:
   void addResult(int InResult) {
@@ -53,6 +53,9 @@ public:
   }
 
   double getAverage() {
+    if (OpNum == 0) {
+      return 0;
+    }
     return static_cast<double>(ResultSum) / static_cast<double>(OpNum);
   }
 };
@@ -254,7 +257,7 @@ public:
         int Result;
         In >> std::hex >> BbId;
         In >> std::hex >> InstrId;
-        In >> Result;
+        In >> std::dec >> Result;
 
         BasicBlocks.at(BbId).addBinOpResult(InstrId, Result);
       } else if (Type == "exec") {
