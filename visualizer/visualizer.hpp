@@ -9,6 +9,39 @@
 
 namespace Pass {
 
+const std::vector<std::string> Colors = {"\"darkgreen\"", "\"blue\"", "\"red\"", "\"orange\"", "\"purple\""};
+const size_t NumColors = Colors.size();
+
+const std::string Legend = "subgraph cluster_01 {\n"
+    "label = \"Legend\";\n"
+    "node [shape=point]\n"
+    "{\n"
+    "rank=same\n"
+    "d0 [style = invis];\n"
+    "d1 [style = invis];\n"
+    "p0 [style = invis];\n"
+    "p1 [style = invis];\n"
+    "}\n"
+    "d0 -> d1 [label=\"control flow\" style=\"solid\"]\n"
+    "p0 -> p1 [label=\"data flow\" style=\"dashed\"]\n"
+"}\n";
+
+class UsesInfo {
+  size_t BBUsesId;
+  size_t InstrUsesId;
+
+public:
+  UsesInfo(size_t BBId, size_t InstrId) : BBUsesId(BBId), InstrUsesId(InstrId) {}
+
+  size_t getBBId() {
+    return BBUsesId;
+  }
+
+  size_t getInstrId() {
+    return InstrUsesId;
+  }
+};
+
 class BinOpInfo {
   int ResultSum;
   size_t OpNum;
@@ -28,21 +61,34 @@ class InstructionInfo {
 private:
   std::string InstrStr;
   size_t InstrId;
+  std::vector<UsesInfo> Uses;
   bool IsBinary = false;
   BinOpInfo Info;
 
 public:
-  InstructionInfo(std::string Str, size_t Id) : InstrStr(Str), InstrId(Id){};
+  InstructionInfo(std::string Str, size_t Id, std::vector<UsesInfo> &UsesIn) : InstrStr(Str), InstrId(Id), Uses(UsesIn){};
 
   void addResult(int InResult) {
     IsBinary = true;
     Info.addResult(InResult);
   }
 
-  void dumpDot(std::ofstream &DotFile) {
+  void dumpDot(std::ofstream &DotFile, std::string &InnerColor) {
+    DotFile << "<TR><TD PORT=\"" << InstrId << "\" COLSPAN=\"2\" BORDER=\"1\" SIDES=\"LR\" BGCOLOR=" << InnerColor << ">";
     DotFile << InstrStr;
     if (IsBinary) {
         DotFile << " = " << Info.getAverage();
+    }
+    DotFile << "</TD></TR>";
+  }
+
+  void dumpUses(std::ofstream &DotFile, size_t BBId, int &EdgeColorId) {
+    for (auto &Info: Uses) {
+      DotFile << "box" << BBId << ":" << InstrId << ":e";
+      DotFile << "->";
+      DotFile << "box" << Info.getBBId() << ":" << Info.getInstrId() << ":e";
+      DotFile << "[penwidth= \"1\" style = \"dashed\" color=" << Colors[EdgeColorId % NumColors] << "]\n";
+      EdgeColorId += 1;
     }
   }
 };
@@ -60,9 +106,9 @@ public:
 
   void addSuccessor(size_t &SuccessorId) { Successors.push_back(SuccessorId); }
 
-  void addInstruction(size_t &InstrId, std::string &InstrStr) {
+  void addInstruction(size_t &InstrId, std::string &InstrStr, std::vector<UsesInfo> &Uses) {
     InstructionsOrder.push_back(InstrId);
-    InstrInfo.insert({InstrId, InstructionInfo(InstrStr, InstrId)});
+    InstrInfo.insert({InstrId, InstructionInfo(InstrStr, InstrId, Uses)});
   }
 
   void addBinOpResult(size_t &InstrAddr, int &Result) {
@@ -73,26 +119,40 @@ public:
     ExecNum += 1;
   }
 
-  void dumpDot(std::ofstream &DotFile, double AvgExecs) {
-    DotFile << "box" << BBId;
-    DotFile << " [shape = \"record\", style = \"filled\", gradientangle = 90, fillcolor = \"";
+  void dumpDot(std::ofstream &DotFile, double AvgExecs, int &EdgeColorId) {
+    DotFile << "box" << BBId << "[";
+    std::string BottomColor, InnerColor, BranchColor;
 
     if (static_cast<double>(ExecNum) >= AvgExecs) {
-        DotFile << "gold;" << 1.0 - 3.0 / (static_cast<double>(InstructionsOrder.size()) + 3.0) << ":orange";
+        InnerColor = "\"#f9d62e\"";
+        BottomColor = "\"#fc913a\"";
+        BranchColor = "\"#e2f4c7\"";
     } else {
-        DotFile << "cyan;" << 1.0 - 3.0 / (static_cast<double>(InstructionsOrder.size()) + 3.0) << ":deepskyblue";
+        InnerColor = "\"#71c7ec\"";
+        BottomColor = "\"#189ad3\"";
+        BranchColor = "\"#1ebbd7\"";
     }
 
-    DotFile << "\", label = \"";
-    DotFile << "{<f0>BasicBlock\\n" << BBId << " in " << FuncName << "\\nExec num: " << ExecNum << "\\n" << "|<f1>";
+    DotFile << "label = <";
+    DotFile << "<TABLE CELLBORDER=\"1\" CELLSPACING=\"0\" ";
+    if (Successors.size() <= 1) {
+      DotFile << "BORDER=\"1\" SIDES=\"B\">\n";
+    } else {
+      DotFile << "BORDER=\"0\">\n";
+    }
+
+    DotFile << "<TR><TD PORT = \"f0\" COLSPAN=\"2\" BGCOLOR=" << BottomColor << ">";
+    DotFile << "BasicBlock " << BBId << "<BR/>in " << FuncName << "<BR/>Exec num: " << ExecNum << "</TD></TR>";
     for (auto &Id: InstructionsOrder) {
-        InstrInfo.at(Id).dumpDot(DotFile);
-        DotFile << "\\n";
+        InstrInfo.at(Id).dumpDot(DotFile, InnerColor);
     }
     if (Successors.size() > 1) {
-      DotFile << "| {<f2>True |<f3> False}";
+      DotFile << "<TR ><TD PORT=\"f2\" BGCOLOR=" << BranchColor << ">";
+      DotFile << "True</TD><TD PORT=\"f3\" BGCOLOR=" << BranchColor << ">";
+      DotFile << "False</TD></TR>";
     }
-    DotFile << "}\"]\n";
+
+    DotFile << "</TABLE>>];\n";
 
     if (Successors.size() == 1) {
       DotFile << "box" << BBId;
@@ -106,6 +166,10 @@ public:
       DotFile << "->" << "box" << Successors.back() << "[style = \"solid\"]\n";
     }
 
+    for (auto &Id: InstructionsOrder) {
+      InstrInfo.at(Id).dumpUses(DotFile, BBId, EdgeColorId);
+    }
+
   }
 };
 
@@ -113,6 +177,7 @@ class CFGVisualizer {
 private:
   std::unordered_map<size_t, BBInfo> BasicBlocks;
   double AvgExecs;
+  int EdgeColorId = 0;
 
 public:
   CFGVisualizer() = default;
@@ -149,12 +214,20 @@ public:
 
       for (int i = 0; i < NumInstr; i++) {
         size_t InstrId;
+        size_t UsesId, BBUsesId;
+        size_t NumUses;
+        std::vector<UsesInfo> Uses;
         std::string InstrStr;
 
-        In >> std::hex >> InstrId;
+        In >> std::hex >> InstrId >> std::dec >> NumUses;
+        for (size_t i = 0; i < NumUses; i++) {
+          In >> std::hex >> BBUsesId >> UsesId;
+          UsesInfo Info = UsesInfo(BBUsesId, UsesId);
+          Uses.push_back(Info);
+        }
         In.get();
         std::getline(In, InstrStr);
-        BasicBlocks.at(BbId).addInstruction(InstrId, InstrStr);
+        BasicBlocks.at(BbId).addInstruction(InstrId, InstrStr, Uses);
       }
 
       ch = In.get();
@@ -177,7 +250,7 @@ public:
 
       In >> Type;
       if (Type == "binop") {
-        size_t InstrId;
+        size_t InstrId, BBUsesId;
         int Result;
         In >> std::hex >> BbId;
         In >> std::hex >> InstrId;
@@ -200,10 +273,12 @@ public:
   void dumpDot(std::string DotFileName) {
     std::ofstream DotFile(DotFileName);
 
-    DotFile << "DiGraph List {\n";
-    DotFile << "rankdir = TB\n";
+    DotFile << "DiGraph CFG {\n";
+    // DotFile << "rankdir = TB\n";
+    DotFile << "node[shape=plaintext]\n";
+    DotFile << Legend;
     for (auto &Bb : BasicBlocks) {
-        Bb.second.dumpDot(DotFile, AvgExecs);
+        Bb.second.dumpDot(DotFile, AvgExecs, EdgeColorId);
     }
     DotFile << "}\n";
   }
