@@ -5,8 +5,10 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <fstream>
+#include <llvm-14/llvm/IR/BasicBlock.h>
 #include <llvm-14/llvm/IR/CFG.h>
 #include <llvm-14/llvm/IR/Function.h>
+#include <llvm-14/llvm/IR/Instruction.h>
 #include <llvm-14/llvm/IR/LLVMContext.h>
 #include <llvm-14/llvm/Support/FileSystem.h>
 #include <llvm-14/llvm/Support/raw_ostream.h>
@@ -53,7 +55,13 @@ struct CFGPass : public FunctionPass {
       }
       Os << "{\n";
       for (auto &I : Bb) {
-        Os << &I << "\n";
+        Os << &I << " " << I.getNumUses() <<  "\n";
+        for (auto& U: I.uses()) {
+            auto* User = U.getUser();
+            if (auto *Instr = dyn_cast<Instruction>(User)) {
+              Os << Instr->getParent() << " " << User << "\n";
+            }
+        }
         Os << I << "\n";
       }
       Os << "}\n\n";
