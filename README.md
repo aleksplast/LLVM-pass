@@ -6,7 +6,7 @@ In static it collects:
   - Basic Block ID
   - Function, that BB belongs to
   - Basic Block's successors
-  - Instructions inside Basic Block and their IDs
+  - Instructions inside Basic Block, their Uses and IDs
 
 Result will be `<filename>.pcno` in following format:
 ```
@@ -18,10 +18,14 @@ Successor1
 ...
 SuccessorN
 {
-Instruction1Id
+Instruction1Id NumUses
+BBUses1 Uses1
+...
+BBUsesN UsesN
 Instruction1
 ...
 InstructionNId
+...
 InstructionN
 }
 NEXT BB INFO
@@ -39,7 +43,7 @@ binop BBId InstrId Result
 ...
 ```
 
-Then, you can collect and visualize info, using visualizer. Visualizer will paint hot basic blocks in orange colors and cold basic blocks in blue colors. (Basic Block is treated as hot if it was executed more than average number of times). Visualizer will also print result of binary operation after them with `=` (for recursion it will print the last result).
+Then, you can collect and visualize info, using visualizer. Visualizer will paint hot basic blocks in orange colors and cold basic blocks in blue colors. (Basic Block is treated as hot if it was executed more than average number of times). Visualizer will also print average result of binary operation after them with `=`. It will also show contol flow with solid black edges and data flow with dashed edges.
 
 ## Build
 
@@ -67,13 +71,16 @@ It will generate `libPass.so` - plugin for clang with our Pass. It will also gen
 
   `clang -Xclang -load -Xclang ./libPass.so <src_file> ../pass/log.c -flegacy-pass-manager`
 
-3. Generate DOT file
+3. Run binary
+   `./<binary_name>`
+
+4. Generate DOT file
 
    `./visualizer <src_file>.pcno <src_file>.pcda`
 
    (this will create `cfg.dot`, if you want to specify output file, run `./visualizer <src_file>.pcno <src_file>.pcda <out_file>`)
 
-4. Generate PNG of CFG
+5. Generate PNG of CFG
 
    `dot -Tpng <out_file>.dot -o <out>.png`
 
@@ -96,23 +103,16 @@ int main() {
 ```
 
 CFG:
-<img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/0225cb5f-fe10-4b9d-bd76-10b651a504d3">
+<img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/b03907bd-2915-493f-9ea8-2182fb4e7671">
 
 ### Factorial
 Source file you can find here: examples/factorial.c
 
 CFG:
-<img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/dedfa68b-1546-4631-8966-8d854f310ddd">
+<img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/766db093-5bef-4786-aefd-870e90ecad85">
 
 ### Something harder
 Programm, that calculates maximum subarray from given array you can find here: examples/max_subarray.cpp
 
 CFG:
-<img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/fd589f8c-468b-4e7b-8997-df6eaa094214">
-
-
-
-
-
-
-
+<img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/613b655f-f582-44ef-8d56-c83947599a3e">
