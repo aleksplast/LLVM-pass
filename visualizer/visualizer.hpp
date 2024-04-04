@@ -74,8 +74,8 @@ public:
   }
 
   void dumpDot(std::ofstream &DotFile, double AvgExecs) {
-    DotFile << "\"box" << BBId << "\" ";
-    DotFile << "[shape = \"record\", style = \"filled\", gradientangle = 90, fillcolor = \"";
+    DotFile << "box" << BBId;
+    DotFile << " [shape = \"record\", style = \"filled\", gradientangle = 90, fillcolor = \"";
 
     if (static_cast<double>(ExecNum) >= AvgExecs) {
         DotFile << "gold;" << 1.0 - 3.0 / (static_cast<double>(InstructionsOrder.size()) + 3.0) << ":orange";
@@ -84,19 +84,28 @@ public:
     }
 
     DotFile << "\", label = \"";
-    DotFile << "{BasicBlock\\n" << BBId << " in " << FuncName << "\\nExec num: " << ExecNum << "\\n";
+    DotFile << "{<f0>BasicBlock\\n" << BBId << " in " << FuncName << "\\nExec num: " << ExecNum << "\\n" << "|<f1>";
     for (auto &Id: InstructionsOrder) {
         InstrInfo.at(Id).dumpDot(DotFile);
         DotFile << "\\n";
     }
+    if (Successors.size() > 1) {
+      DotFile << "| {<f2>True |<f3> False}";
+    }
     DotFile << "}\"]\n";
 
-    for (auto &Succ: Successors) {
-        DotFile << "\"box" << BBId << "\"";
-        DotFile << " -> ";
-        DotFile << "\"box" << Succ << "\"";
-        DotFile << "[style = \"solid\"]";
+    if (Successors.size() == 1) {
+      DotFile << "box" << BBId;
+      DotFile << "->";
+      DotFile << "box" << Successors.front();
+      DotFile << "[style = \"solid\"]\n";
+    } else if (Successors.size() == 2) {
+      DotFile << "box" << BBId << ":f2";
+      DotFile << "->" << "box" << Successors.front() << "[style = \"solid\"]\n";
+      DotFile << "box" << BBId << ":f3";
+      DotFile << "->" << "box" << Successors.back() << "[style = \"solid\"]\n";
     }
+
   }
 };
 
