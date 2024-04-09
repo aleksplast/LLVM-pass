@@ -75,7 +75,7 @@ struct CFGPass : public FunctionPass {
     // Prepare bbStartLogger function
     ArrayRef<Type *> BbStartLogParamTypes = {
         Builder.getInt8Ty()->getPointerTo(),
-        Builder.getInt64Ty()->getPointerTo()};
+        Builder.getInt64Ty()};
     FunctionType *BbStartLogFuncType =
         FunctionType::get(RetType, BbStartLogParamTypes, false);
     FunctionCallee BbStartLogFunc =
@@ -83,9 +83,8 @@ struct CFGPass : public FunctionPass {
 
     // Prepare binOpLogger function
     ArrayRef<Type *> binOpParamTypes = {Builder.getInt8Ty()->getPointerTo(),
-                                        Builder.getInt64Ty()->getPointerTo(),
-                                        Builder.getInt64Ty()->getPointerTo(),
-                                        Type::getInt32Ty(Ctx)};
+                                        Builder.getInt64Ty(),
+                                        Builder.getInt64Ty()};
     FunctionType *binOpLogFuncType =
         FunctionType::get(RetType, binOpParamTypes, false);
     FunctionCallee binOpLogFunc =
@@ -104,11 +103,12 @@ struct CFGPass : public FunctionPass {
           // Insert after op
           Builder.SetInsertPoint(op);
           Builder.SetInsertPoint(&Bb, ++Builder.GetInsertPoint());
+          Value *v = Builder.CreateIntCast(op, Builder.getInt64Ty(), true);
 
           // Insert a call to binOptLogFunc function
           Value *InstrAddr =
               ConstantInt::get(Builder.getInt64Ty(), (int64_t)(&I));
-          Value *args[] = {FileName, BbAddr, InstrAddr, op};
+          Value *args[] = {FileName, BbAddr, InstrAddr};
           Builder.CreateCall(binOpLogFunc, args);
         }
       }
@@ -116,7 +116,7 @@ struct CFGPass : public FunctionPass {
       Changed = true;
     }
 
-    return true;
+    return Changed;
   }
 
   std::string handleSourceName(const std::string &SourceFile) {
@@ -151,4 +151,4 @@ static void registerMyPass(const PassManagerBuilder &,
   PM.add(new CFGPass());
 }
 static RegisterStandardPasses
-    RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible, registerMyPass);
+    RegisterMyPass(PassManagerBuilder::EP_OptimizerLast, registerMyPass);
