@@ -8,5 +8,9 @@ set(PASS_SRC ${PASS_DIR}/pass.cpp)
 add_library(Pass SHARED ${PASS_SRC})
 
 set(VISUALIZER_SRC ${VISUALIZER_DIR}/main.cpp)
+
+find_package(LLVM)
+target_include_directories(Pass PUBLIC ${LLVM_INCLUDE_DIRS})
+
 add_executable(visualizer)
 target_sources(visualizer PRIVATE ${VISUALIZER_SRC})

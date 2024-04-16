@@ -92,7 +92,7 @@ struct CFGPass : public FunctionPass {
 
     // Insert loggers for bbStart and binOpt instructions
     for (auto &Bb : F) {
-      Builder.SetInsertPoint(&Bb.front());
+      Builder.SetInsertPoint(&*Bb.getFirstInsertionPt());
       Value *FileName = Builder.CreateGlobalStringPtr(DynamicFile);
       Value *BbAddr = ConstantInt::get(Builder.getInt64Ty(), (int64_t)(&Bb));
       Value *args[] = {FileName, BbAddr};
