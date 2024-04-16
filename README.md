@@ -114,5 +114,9 @@ CFG:
 ### Something harder
 Programm, that calculates maximum subarray from given array you can find here: examples/max_subarray.cpp
 
-CFG:
+CFG for unoptimized programm (-O0):
 <img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/613b655f-f582-44ef-8d56-c83947599a3e">
+
+CFG for optimized programm (-O2):
+<img align="center" src="https://github.com/aleksplast/LLVM-pass/assets/111467660/8cf6c9f3-4257-4fd5-a26c-9d9869701a85">
+
